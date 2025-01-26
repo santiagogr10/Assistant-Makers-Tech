@@ -129,25 +129,31 @@ def show_chatbot():
         else:
             st.markdown(f"**Bot:** {msg['content']}")
 
-def show_recommendations():
-    # Use a div to wrap the content for full centering
-    st.markdown('<div class="center-content">', unsafe_allow_html=True)
+def show_recommendations(recommendations):
+    """
+    Muestra las recomendaciones en formato de columnas comparativas
+    Args:
+        recommendations (dict): Diccionario con las categorías de productos recomendados
+    """
     st.subheader("Recommended Products")
-
-    # Recommendations data
-    recommendations = {
-        "Highly Recommended": ["MacBook Pro", "Dell XPS 15"],
-        "Recommended": ["Lenovo ThinkPad", "HP Pavilion"],
-        "Not Recommended": ["Old Acer Aspire"]
-    }
-
-    # Build the centered recommendations content
-    for category, products in recommendations.items():
-        st.markdown(f"<h4 style='text-align: center;'>{category}:</h4>", unsafe_allow_html=True)
-        for product in products:
-            st.markdown(f"<p style='text-align: center;'>- {product}</p>", unsafe_allow_html=True)
-
-    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Display recommendations in columns for comparison
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.markdown("<h4 style='text-align: center; font-size: 14px;'>Highly Recommended</h4>", unsafe_allow_html=True)
+        for product in recommendations["Highly Recommended"]:
+            st.markdown(f"<p style='text-align: center; font-size: 12px;'>- {product}</p>", unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown("<h4 style='text-align: center; font-size: 14px;'>Recommended</h4>", unsafe_allow_html=True)
+        for product in recommendations["Recommended"]:
+            st.markdown(f"<p style='text-align: center; font-size: 12px;'>- {product}</p>", unsafe_allow_html=True)
+    
+    with col3:
+        st.markdown("<h4 style='text-align: center; font-size: 14px;'>Not Recommended</h4>", unsafe_allow_html=True)
+        for product in recommendations["Not Recommended"]:
+            st.markdown(f"<p style='text-align: center; font-size: 12px;'>- {product}</p>", unsafe_allow_html=True)
 
 
 # Admin Dashboard Section
