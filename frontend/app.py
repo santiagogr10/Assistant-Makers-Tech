@@ -3,7 +3,13 @@ import sqlite3
 import requests
 import pandas as pd
 import matplotlib.pyplot as plt
-from database_reader import get_database_content_as_dict
+from database_reader import (
+    get_database_content_as_dict,
+    calculate_total_products,
+    calculate_low_stock_items,
+    calculate_total_categories,
+    calculate_out_of_stock_items,
+)
 
 # Page configuration
 st.set_page_config(page_title="Makers Tech ChatBot", layout="wide")
@@ -355,14 +361,19 @@ elif st.session_state.current_page == "dashboard":
 
     # Métricas principales en la parte superior
     col1, col2, col3, col4 = st.columns(4)
+    data = get_database_content_as_dict()
+    total_products = calculate_total_products(data)
+    low_stock_items = calculate_low_stock_items(data, 10)
+    out_of_stock_items = calculate_out_of_stock_items(data)
+    total_categories = calculate_total_categories(data)
     with col1:
-        st.metric("Total Products", "75", "↑ 4")
+        st.metric("Total Products", total_products, "4")
     with col2:
-        st.metric("Low Stock Items", "12", "↓ 2")
+        st.metric("Low Stock Items", low_stock_items, "2")
     with col3:
-        st.metric("Out of Stock", "3", "↑ 1")
+        st.metric("Out of Stock", out_of_stock_items, "")
     with col4:
-        st.metric("Total Categories", "8", "")
+        st.metric("Total Categories", total_categories, "")
 
     # Primera fila de gráficos
     col1, col2 = st.columns(2)
