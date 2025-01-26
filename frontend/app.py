@@ -9,7 +9,7 @@ apply_custom_css()
 
 # App layout
 st.title("Makers Tech ChatBot")
-st.write("Welcome to Makers Tech! Explore inventory, chat with our bot, and view product recommendations.")
+st.write("Welcome to Makers Tech! Chat with our bot, explore recommendations, and manage inventory.")
 
 # Tabs for different sections
 tab1, tab2, tab3 = st.tabs(["ChatBot", "Recommendations", "Admin Dashboard"])
@@ -28,4 +28,4 @@ with tab3:
 
 # Footer
 st.divider()
-st.write("**Makers Tech ChatBot** © 2025 - All rights reserved")
+st.markdown("<h3>**Makers Tech ChatBot** © 2025 - All rights reserved</h3>", unsafe_allow_html=True)
