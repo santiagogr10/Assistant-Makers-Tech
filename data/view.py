@@ -3,47 +3,47 @@ import sqlite3
 
 def view_database(db_name="store.db"):
     """
-    Muestra la estructura y los datos de la base de datos.
+    Displays the structure and data of the database.
 
     Args:
-        db_name (str): Nombre del archivo de la base de datos.
+        db_name (str): Name of the database file.
     """
     try:
-        # Conectar a la base de datos
+        # Connect to the database
         conn = sqlite3.connect(db_name)
         cursor = conn.cursor()
 
-        # Mostrar las tablas existentes
-        print("\nTablas existentes en la base de datos:")
+        # Display the existing tables
+        print("\nExisting tables in the database:")
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
         tables = cursor.fetchall()
         for table in tables:
             print(f"- {table[0]}")
 
-        # Mostrar los datos de cada tabla
+        # Display data from each table
         for table in tables:
             table_name = table[0]
-            print(f"\nDatos en la tabla '{table_name}':")
+            print(f"\nData in the table '{table_name}':")
             cursor.execute(f"SELECT * FROM {table_name};")
             rows = cursor.fetchall()
 
-            # Obtener los nombres de las columnas
+            # Get the column names
             cursor.execute(f"PRAGMA table_info({table_name});")
             columns = [col[1] for col in cursor.fetchall()]
-            print(f"Columnas: {columns}")
+            print(f"Columns: {columns}")
 
-            # Mostrar los datos
+            # Display the data
             if rows:
                 for row in rows:
                     print(row)
             else:
-                print("(Tabla vacía)")
+                print("(Table is empty)")
 
-        # Cerrar la conexión
+        # Close the connection
         conn.close()
 
     except Exception as e:
-        print(f"Error al visualizar la base de datos: {e}")
+        print(f"Error while viewing the database: {e}")
 
 
 if __name__ == "__main__":

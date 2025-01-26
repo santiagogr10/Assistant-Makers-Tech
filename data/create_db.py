@@ -3,18 +3,19 @@ import sqlite3
 
 def create_database(db_name="store.db"):
     """
-    Crea la base de datos con las tablas 'products' y 'users'.
-    Si las tablas ya existen, no las recrea.
+    Creates the database with the tables 'products' and 'users'.
+    If the tables already exist, they will not be recreated.
 
     Args:
-        db_name (str): Nombre del archivo de la base de datos.
+        db_name (str): Name of the database file.
     """
-    # Conectar o crear la base de datos
+    # Connect to or create the database
     conn = sqlite3.connect(db_name)
     cursor = conn.cursor()
 
-    # Crear la tabla 'products'
-    cursor.execute("""
+    # Create the 'products' table
+    cursor.execute(
+        """
     CREATE TABLE IF NOT EXISTS products (
         product_id INTEGER PRIMARY KEY,
         name TEXT NOT NULL,
@@ -25,10 +26,12 @@ def create_database(db_name="store.db"):
         description TEXT,
         features TEXT
     );
-    """)
+    """
+    )
 
-    # Crear la tabla 'users'
-    cursor.execute("""
+    # Create the 'users' table
+    cursor.execute(
+        """
     CREATE TABLE IF NOT EXISTS users (
         user_id INTEGER PRIMARY KEY,
         name TEXT NOT NULL,
@@ -36,11 +39,12 @@ def create_database(db_name="store.db"):
         preferences TEXT,
         purchase_history TEXT
     );
-    """)
+    """
+    )
 
-    print("Base de datos y tablas creadas exitosamente.")
+    print("Database and tables created successfully.")
 
-    # Confirmar los cambios y cerrar la conexión
+    # Commit changes and close the connection
     conn.commit()
     conn.close()
 
