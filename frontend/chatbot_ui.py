@@ -94,58 +94,45 @@ def show_chatbot():
     if "messages" not in st.session_state:
         st.session_state["messages"] = []
 
-    # Display chat history in a scrollable container
-    st.markdown('<div class="chat-history">', unsafe_allow_html=True)
-    for msg in st.session_state["messages"]:
-        if msg["role"] == "user":
-            st.markdown(f"<div class='user-message'>You: {msg['content']}</div>", unsafe_allow_html=True)
-        else:
-            st.markdown(f"<div class='bot-message'>Bot: {msg['content']}</div>", unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # Persistent input bar
+    # User input and send button in a horizontal bar
     st.markdown('<div class="chat-container">', unsafe_allow_html=True)
     col1, col2 = st.columns([4, 1])
-
     with col1:
-        user_input = st.text_input(
-            "Enter your question:",
-            placeholder="Type your question here...",
-            key="chat_input",
-            label_visibility="collapsed"
-        )
-
+        user_input = st.text_input("", placeholder="Enter your question here...", key="chat_input", label_visibility="collapsed")
     with col2:
-        send_clicked = st.button("Send")
-
+        if st.button("Send", key="send_button"):
+            if user_input.strip():
+                st.session_state["messages"].append({"role": "user", "content": user_input})
+                try:
+                    with st.spinner("Fetching response..."):
+                        # Send the query to the backend
+                        response = requests.post(
+                            "http://127.0.0.1:5000/api/chat",  # Adjust with actual backend URL
+                            json={"message": user_input}
+                        )
+                        if response.status_code == 200:
+                            chatbot_response = response.json().get("response", "No response received.")
+                            st.session_state["messages"].append({"role": "assistant", "content": chatbot_response})
+                        else:
+                            st.session_state["messages"].append({"role": "assistant", "content": "Error fetching response."})
+                except Exception as e:
+                    st.error(f"Error connecting to backend: {e}")
+            else:
+                st.warning("Please enter a question before clicking 'Send'.")
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # Handle user input
-    if send_clicked and user_input.strip():
-        st.session_state["messages"].append({"role": "user", "content": user_input})
-
-        try:
-            # Send the query to the backend
-            with st.spinner("Fetching response from the chatbot..."):
-                response = requests.post(
-                    "http://127.0.0.1:5000/api/chat",  # Backend URL
-                    json={"message": user_input}
-                )
-
-            if response.status_code == 200:
-                chatbot_response = response.json().get("response", "No response received.")
-                st.session_state["messages"].append({"role": "assistant", "content": chatbot_response})
-            else:
-                st.session_state["messages"].append({"role": "assistant", "content": "Error fetching response."})
-        except Exception as e:
-            st.error(f"Error connecting to the backend: {e}")
-    elif send_clicked:
-        st.warning("Please enter a question before clicking 'Send'.")
-
+    # Display chat history
+    for msg in st.session_state["messages"]:
+        if msg["role"] == "user":
+            st.markdown(f"**You:** {msg['content']}")
+        else:
+            st.markdown(f"**Bot:** {msg['content']}")
 
 def show_recommendations():
+    # Use a div to wrap the content for full centering
+    st.markdown('<div class="center-content">', unsafe_allow_html=True)
     st.subheader("Recommended Products")
-    
+
     # Recommendations data
     recommendations = {
         "Highly Recommended": ["MacBook Pro", "Dell XPS 15"],
@@ -153,12 +140,12 @@ def show_recommendations():
         "Not Recommended": ["Old Acer Aspire"]
     }
 
-    # Center all recommendations
-    st.markdown('<div class="center-content">', unsafe_allow_html=True)
+    # Build the centered recommendations content
     for category, products in recommendations.items():
-        st.write(f"**{category}:**")
+        st.markdown(f"<h4 style='text-align: center;'>{category}:</h4>", unsafe_allow_html=True)
         for product in products:
-            st.write(f"- {product}")
+            st.markdown(f"<p style='text-align: center;'>- {product}</p>", unsafe_allow_html=True)
+
     st.markdown('</div>', unsafe_allow_html=True)
 
 
