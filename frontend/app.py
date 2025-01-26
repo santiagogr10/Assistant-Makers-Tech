@@ -3,6 +3,7 @@ import sqlite3
 import requests
 import pandas as pd
 import matplotlib.pyplot as plt
+from database_reader import get_database_content_as_dict
 
 # Page configuration
 st.set_page_config(page_title="Makers Tech ChatBot", layout="wide")
@@ -406,13 +407,7 @@ elif st.session_state.current_page == "dashboard":
 
     # Segunda fila
     st.subheader("Inventory Details")
-    inventory_data = {
-        "Product": ["MacBook Pro", "Dell XPS", "HP Pavilion", "Lenovo ThinkPad", "iPad Pro"],
-        "Category": ["Laptops", "Laptops", "Laptops", "Laptops", "Tablets"],
-        "Brand": ["Apple", "Dell", "HP", "Lenovo", "Apple"],
-        "Stock": [15, 12, 8, 10, 20],
-        "Price": ["$1299", "$999", "$799", "$899", "$799"],
-    }
+    inventory_data = get_database_content_as_dict()
     df_inventory = pd.DataFrame(inventory_data)
 
     # Estilo para la tabla
