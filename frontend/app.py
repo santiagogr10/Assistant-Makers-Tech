@@ -1,6 +1,8 @@
 import streamlit as st
 import sqlite3
 import requests
+import pandas as pd
+import matplotlib.pyplot as plt
 
 # Page configuration
 st.set_page_config(page_title="Makers Tech ChatBot", layout="wide")
@@ -32,6 +34,39 @@ if 'current_page' not in st.session_state:
 class Database:
     def __init__(self, db_name: str = "store.db"):
         self.db_name = db_name
+
+    def verify_user(self, user_id: int) -> bool:
+        """Verifica si el usuario existe en la base de datos"""
+        try:
+            with sqlite3.connect(self.db_name) as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT user_id FROM users WHERE user_id = ?", (user_id,))
+                return cursor.fetchone() is not None
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return False
+
+    def get_user_data(self, user_id: int) -> dict:
+        """Obtiene todos los datos relevantes del usuario"""
+        try:
+            with sqlite3.connect(self.db_name) as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT user_id, purchase_history, preferences 
+                    FROM users 
+                    WHERE user_id = ?
+                """, (user_id,))
+                result = cursor.fetchone()
+                if result:
+                    return {
+                        "user_id": result[0],
+                        "purchase_history": result[1],
+                        "preferences": result[2]
+                    }
+                return None
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return None
 
     def get_user_history(self, user_id: int) -> str:
         """Obtiene el historial de compras del usuario"""
@@ -89,16 +124,57 @@ class Database:
 # Initialize database
 db = Database()
 
-def generate_ai_response(user_message: str, user_history: str, products: list):
-    """
-    Genera una respuesta usando el cliente de IA
-    """
+def generate_ai_response(user_message: str, user_data: dict):
+    """Genera una respuesta usando el cliente de IA"""
     try:
-        # Conectar con el endpoint de la IA
+        # Verificar si user_data es None o está vacío
+        if not user_data:
+            return "Lo siento, no puedo acceder a los datos del usuario en este momento."
+        
+        # Debug print
+        print(f"Generating response for user data: {user_data}")
+        
+        # Asegurar que todos los campos existan, usando valores por defecto si no
+        context = f"""
+        Basándote en el siguiente historial y preferencias del usuario:
+        - Historial de compras: {user_data.get('purchase_history', 'Sin historial')}
+        - Marcas compradas: {', '.join(user_data.get('bought_brands', ['Sin marcas']))
+                           if user_data.get('bought_brands') else 'Sin marcas'}
+        - Categorías compradas: {', '.join(user_data.get('bought_categories', ['Sin categorías']))
+                               if user_data.get('bought_categories') else 'Sin categorías'}
+        - Preferencias: {user_data.get('preferences', 'Sin preferencias')}
+
+        Por favor, sigue estos criterios para las recomendaciones:
+
+        1. Highly Recommended:
+           - SOLO productos de las marcas: {', '.join(user_data.get('bought_brands', ['Sin marcas']))
+                                         if user_data.get('bought_brands') else 'Sin marcas'}
+           - SOLO de las categorías: {', '.join(user_data.get('bought_categories', ['Sin categorías']))
+                                   if user_data.get('bought_categories') else 'Sin categorías'}
+           - Debe ser complementario a las compras previas
+           - Solo productos en stock
+
+        2. Recommended:
+           - Productos de categorías relacionadas a: {', '.join(user_data.get('bought_categories', ['Sin categorías']))
+                                                   if user_data.get('bought_categories') else 'Sin categorías'}
+           - Complementos útiles para los productos comprados
+           - Puede ser de otras marcas
+           - Solo productos en stock
+
+        3. Not Recommended:
+           - Productos de marcas y categorías diferentes a las mencionadas
+           - Productos no complementarios
+
+        Responde basándote ESTRICTAMENTE en estos criterios y el historial específico de este usuario.
+        Si el usuario no tiene historial, recomienda productos populares o básicos.
+        """
+
         response = requests.post(
-            "http://127.0.0.1:5000/api/chat",  # URL del endpoint de la IA
+            "http://127.0.0.1:5000/api/chat",
             json={
-                "message": user_message
+                "message": user_message,
+                "user_data": user_data,
+                "context": context
             }
         )
         
@@ -106,10 +182,8 @@ def generate_ai_response(user_message: str, user_history: str, products: list):
             return response.json().get("response", "I couldn't process that request.")
         else:
             return f"I'm having trouble processing your request. Status code: {response.status_code}"
-            
-    except requests.exceptions.ConnectionError:
-        return "I'm currently unable to connect to my knowledge base. Please try again in a moment."
     except Exception as e:
+        print(f"Error in generate_ai_response: {str(e)}")  # Debug print
         return f"An unexpected error occurred: {str(e)}"
 
 # Sidebar para navegación
@@ -130,18 +204,26 @@ with st.sidebar:
 st.title("Makers Tech ChatBot")
 
 if not st.session_state.logged_in:
-    st.write("Welcome to Makers Tech! Please log in to see your personalized recommendations.")
+    st.write("Welcome to Makers Tech! Please log in to chat with our AI.")
     user_id = st.text_input("", placeholder="Enter your User ID", key="login_input", label_visibility="collapsed")
 
     if st.button("Log In"):
         if user_id:
-            user_history = db.get_user_history(int(user_id))
-            if user_history:
-                st.session_state.logged_in = True
-                st.session_state.user_id = user_id
-                st.rerun()
-            else:
-                st.warning("User not found. Please check your User ID.")
+            try:
+                user_id = int(user_id)
+                if db.verify_user(user_id):
+                    user_data = db.get_user_data(user_id)
+                    if user_data:
+                        st.session_state.logged_in = True
+                        st.session_state.user_id = user_id
+                        st.session_state.user_data = user_data
+                        st.rerun()
+                    else:
+                        st.error("Could not retrieve user data.")
+                else:
+                    st.error("User not found. Please check your User ID.")
+            except ValueError:
+                st.error("Please enter a valid numeric ID.")
         else:
             st.warning("Please enter a User ID to log in.")
 
@@ -159,18 +241,16 @@ elif st.session_state.current_page == 'main':
     with col2:
         if st.button("Send", key="send_button"):
             if user_message:
-                # Clear previous messages
+                print(f"Current session state: {st.session_state}")  # Debug print
+                print(f"User data in session: {st.session_state.user_data}")  # Debug print
+                
                 st.session_state.messages = []
                 st.session_state.messages.append({"text": user_message, "is_bot": False})
-                
-                # Obtener el historial del usuario
-                user_history = db.get_user_history(int(st.session_state.user_id))
                 
                 with st.spinner("Getting response..."):
                     bot_response = generate_ai_response(
                         user_message=user_message,
-                        user_history=user_history,
-                        products=db.get_products()
+                        user_data=st.session_state.user_data
                     )
                 
                 st.session_state.messages.append({"text": bot_response, "is_bot": True})
@@ -198,19 +278,95 @@ elif st.session_state.current_page == 'main':
 elif st.session_state.current_page == 'dashboard':
     st.title("Admin Dashboard")
     
-    col1, col2, col3 = st.columns(3)
+    # Métricas principales en la parte superior
+    col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.metric("Total Sales", "$10,000")
+        st.metric("Total Products", "75", "↑ 4")
     with col2:
-        st.metric("Active Users", "150")
+        st.metric("Low Stock Items", "12", "↓ 2")
     with col3:
-        st.metric("Products in Stock", "75")
+        st.metric("Out of Stock", "3", "↑ 1")
+    with col4:
+        st.metric("Total Categories", "8", "")
+
+    # Primera fila de gráficos
+    col1, col2 = st.columns(2)
     
-    st.subheader("Recent Activities")
-    st.write("Recent sales and user activities would appear here")
+    with col1:
+        st.subheader("Stock Levels by Category")
+        # Datos de ejemplo para el gráfico de barras
+        stock_data = {
+            "Category": ["Laptops", "Smartphones", "Tablets", "Accessories"],
+            "Stock": [45, 30, 25, 60]
+        }
+        df_stock = pd.DataFrame(stock_data)
+        
+        fig1, ax1 = plt.subplots(figsize=(10, 6))
+        df_stock.plot(
+            kind="bar",
+            x="Category",
+            y="Stock",
+            ax=ax1,
+            color="#4c9aff"
+        )
+        ax1.set_facecolor("#1f1f2e")
+        fig1.patch.set_facecolor("#1f1f2e")
+        ax1.spines["bottom"].set_color("white")
+        ax1.spines["left"].set_color("white")
+        ax1.tick_params(colors="white")
+        ax1.set_ylabel("Quantity", color="white")
+        plt.xticks(rotation=45)
+        st.pyplot(fig1)
+
+    with col2:
+        st.subheader("Sales Distribution by Brand")
+        # Datos de ejemplo para el gráfico circular
+        sales_data = {
+            "Brand": ["Apple", "Dell", "HP", "Lenovo", "Others"],
+            "Sales": [35, 25, 20, 15, 5]
+        }
+        fig2, ax2 = plt.subplots(figsize=(10, 6))
+        ax2.pie(sales_data["Sales"], labels=sales_data["Brand"], autopct='%1.1f%%',
+                colors=["#4c9aff", "#ff6b6b", "#ffd93d", "#6c5ce7", "#a8e6cf"])
+        ax2.set_facecolor("#1f1f2e")
+        fig2.patch.set_facecolor("#1f1f2e")
+        st.pyplot(fig2)
+
+    # Segunda fila
+    st.subheader("Inventory Details")
+    inventory_data = {
+        "Product": ["MacBook Pro", "Dell XPS", "HP Pavilion", "Lenovo ThinkPad", "iPad Pro"],
+        "Category": ["Laptops", "Laptops", "Laptops", "Laptops", "Tablets"],
+        "Brand": ["Apple", "Dell", "HP", "Lenovo", "Apple"],
+        "Stock": [15, 12, 8, 10, 20],
+        "Price": ["$1299", "$999", "$799", "$899", "$799"]
+    }
+    df_inventory = pd.DataFrame(inventory_data)
     
-    st.subheader("Inventory Status")
-    st.write("Inventory levels and alerts would appear here")
+    # Estilo para la tabla
+    st.dataframe(
+        df_inventory,
+        column_config={
+            "Product": "Product Name",
+            "Category": "Category",
+            "Brand": "Brand",
+            "Stock": st.column_config.NumberColumn(
+                "Current Stock",
+                help="Current stock level",
+                format="%d units"
+            ),
+            "Price": "Price"
+        },
+        hide_index=True,
+        use_container_width=True
+    )
+
+    # Alertas de stock bajo
+    st.subheader("Low Stock Alerts")
+    low_stock_items = df_inventory[df_inventory["Stock"] < 10]
+    if not low_stock_items.empty:
+        for _, item in low_stock_items.iterrows():
+            st.warning(f"⚠️ Low stock alert: {item['Product']} - Only {item['Stock']} units remaining")
 
 # Footer
 st.divider()
