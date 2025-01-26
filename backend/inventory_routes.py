@@ -3,31 +3,38 @@ from backend.deepseek_integration import generate_response
 
 inventory_bp = Blueprint("inventory", __name__)
 
+
 @inventory_bp.route("/api/login", methods=["POST"])
 def login():
     """
-    Endpoint para simular el login de un usuario.
+    Endpoint to simulate user login.
     """
     try:
         data = request.json
         user_id = data.get("user_id")
 
         if not user_id:
-            return jsonify({"error": "Falta el parámetro 'user_id'"}), 400
+            return jsonify({"error": "The 'user_id' parameter is missing"}), 400
 
-        # Aquí podríamos validar el user_id con la base de datos, pero lo simularemos
-        return jsonify({
-            "status": "success",
-            "message": f"Usuario con ID {user_id} autenticado correctamente."
-        }), 200
+        # Here we could validate the user_id with the database, but we will simulate it
+        return (
+            jsonify(
+                {
+                    "status": "success",
+                    "message": f"User with ID {user_id} successfully authenticated.",
+                }
+            ),
+            200,
+        )
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 @inventory_bp.route("/api/chat", methods=["POST"])
 def chat():
     """
-    Endpoint para interactuar con el asistente virtual usando consultas en lenguaje natural.
+    Endpoint to interact with the virtual assistant using natural language queries.
     """
     try:
         data = request.json
@@ -35,47 +42,42 @@ def chat():
         user_message = data.get("message")
 
         if not user_message:
-            return jsonify({"error": "Falta el mensaje del usuario"}), 400
+            return jsonify({"error": "The user's message is missing"}), 400
 
-        # Generar respuesta con la IA
+        # Generate a response with AI
         response = generate_response(user_message, user_id)
 
         if response.get("status") == "error":
             return jsonify({"error": response.get("message")}), 500
 
-        return jsonify({
-            "status": "success",
-            "response": response.get("response")
-        }), 200
+        return jsonify({"status": "success", "response": response.get("response")}), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 @inventory_bp.route("/api/recommendations", methods=["GET"])
 def recommendations():
     """
-    Genera recomendaciones basadas en el historial del usuario o generales si no hay login.
+    Generates recommendations based on the user's history or general suggestions if not logged in.
     """
     try:
-        user_id = request.args.get("user_id", type=int)  # Obtener user_id (si existe)
+        user_id = request.args.get("user_id", type=int)  # Retrieve user_id (if provided)
 
-        # Si no hay user_id, generar recomendaciones generales
+        # Generate general recommendations if no user_id is provided
         if not user_id:
-            user_message = "Genera recomendaciones generales para los usuarios."
+            user_message = "Generate general recommendations for users."
         else:
-            user_message = "Genera recomendaciones personalizadas basadas en mi historial."
+            user_message = "Generate personalized recommendations based on my history."
 
-        # Generar respuesta usando la IA
+        # Generate a response using AI
         response = generate_response(user_message, user_id)
 
         if response.get("status") == "error":
             return jsonify({"error": response.get("message")}), 500
 
-        # Responder con las recomendaciones categorizadas
-        return jsonify({
-            "status": "success",
-            "recommendations": response.get("response")
-        }), 200
+        # Respond with categorized recommendations
+        return jsonify({"status": "success", "recommendations": response.get("response")}), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
