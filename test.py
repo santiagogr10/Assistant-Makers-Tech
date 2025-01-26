@@ -2,19 +2,19 @@ import requests
 
 BASE_URL = "http://127.0.0.1:5000/api/chat"
 
-# Solicitar inputs al usuario
-user_id = input("Ingresa tu ID de usuario (opcional, deja en blanco si no hay login): ")
-user_message = input("Escribe tu consulta para el asistente virtual: ")
+# Prompt the user for inputs
+user_id = input("Enter your User ID (optional, leave blank if not logged in): ")
+user_message = input("Enter your query for the virtual assistant: ")
 
-# Crear el payload con los datos del usuario y el mensaje
+# Create the payload with the user data and message
 payload = {
-    "user_id": user_id if user_id else None,  # Si no hay login, dejamos user_id como None
-    "message": user_message
+    "user_id": user_id if user_id else None,  # Set user_id to None if not logged in
+    "message": user_message,
 }
 
-# Enviar la solicitud al endpoint de chat
+# Send the request to the chat endpoint
 response = requests.post(BASE_URL, json=payload)
 
-# Imprimir la respuesta del servidor
-print("Respuesta del Servidor:")
+# Print the server's response
+print("Server Response:")
 print(response.json())

@@ -1,19 +1,23 @@
 from backend.deepseek_client import get_client
 import sqlite3
 
-# Obtener el cliente configurado
+# Get the configured client
 client = get_client()
 
-def fetch_user_history(user_id: int, db_name="store.db") -> str:
+
+DB_NAME = "store.db"
+
+
+def fetch_user_history(user_id: int, db_name=DB_NAME) -> str:
     """
-    Consulta el historial de compras del usuario en la base de datos.
+    Queries the user's purchase history from the database.
 
     Args:
-        user_id (int): ID del usuario.
-        db_name (str): Nombre de la base de datos.
+        user_id (int): The user's ID.
+        db_name (str): The name of the database.
 
     Returns:
-        str: Historial de compras del usuario como string.
+        str: The user's purchase history as a string.
     """
     conn = sqlite3.connect(db_name)
     cursor = conn.cursor()
@@ -25,15 +29,15 @@ def fetch_user_history(user_id: int, db_name="store.db") -> str:
     return result[0] if result else ""
 
 
-def fetch_inventory(db_name="store.db") -> list:
+def fetch_inventory(db_name=DB_NAME) -> list:
     """
-    Consulta los productos del inventario en la base de datos.
+    Queries the inventory products from the database.
 
     Args:
-        db_name (str): Nombre de la base de datos.
+        db_name (str): The name of the database.
 
     Returns:
-        list: Lista de productos del inventario.
+        list: A list of inventory products.
     """
     conn = sqlite3.connect(db_name)
     cursor = conn.cursor()
@@ -47,23 +51,19 @@ def fetch_inventory(db_name="store.db") -> list:
 
 def classify_products(user_history: str, inventory: list) -> dict:
     """
-    Clasifica los productos en categorías basadas en el historial del usuario.
+    Classifies products into categories based on the user's purchase history.
 
     Args:
-        user_history (str): Historial de compras del usuario.
-        inventory (list): Lista de productos del inventario.
+        user_history (str): The user's purchase history.
+        inventory (list): The inventory products list.
 
     Returns:
-        dict: Productos clasificados en categorías.
+        dict: Products categorized into specific groups.
     """
-    categories = {
-        "Highly Recommended": [],
-        "Recommended": [],
-        "Not Recommended": []
-    }
+    categories = {"Highly Recommended": [], "Recommended": [], "Not Recommended": []}
 
     for product in inventory:
-        name, category, brand, price, stock = product
+        name, category, brand, _, stock = product
         if stock <= 0:
             continue  # Skip out-of-stock items
 
@@ -77,39 +77,47 @@ def classify_products(user_history: str, inventory: list) -> dict:
     return categories
 
 
-def fetch_database_context(db_name="store.db") -> str:
+def fetch_database_context(db_name=DB_NAME) -> str:
     """
-    Obtiene el contexto completo de la base de datos para ser usado en las consultas.
+    Retrieves the full database context to be used for queries.
 
     Args:
-        db_name (str): Nombre de la base de datos.
+        db_name (str): The name of the database.
 
     Returns:
-        str: Contexto de la base de datos como string.
+        str: The database context as a formatted string.
     """
     conn = sqlite3.connect(db_name)
     cursor = conn.cursor()
 
-    # Aquí puedes ajustar la consulta para obtener el contexto necesario
+    # Adjust the query to retrieve the necessary context
     cursor.execute("SELECT name, category, brand, price, stock FROM products;")
     products = cursor.fetchall()
     conn.close()
 
-    # Formatear el contexto de la base de datos
+    # Format the database context
     database_context = "\n".join(
-        f"{name} ({category} - {brand}): Precio ${price}, Stock: {stock}"
+        f"{name} ({category} - {brand}): Price ${price}, Stock: {stock}"
         for name, category, brand, price, stock in products
     )
 
     return database_context
 
 
-def generate_response(user_message: str, user_id: int = None, db_name="store.db") -> dict:
+def generate_response(user_message: str, user_id: int = None, db_name=DB_NAME) -> dict:
     """
-    Genera una respuesta basada en el mensaje del usuario y el contexto de la base de datos.
+    Generates a response based on the user's message and the database context.
+
+    Args:
+        user_message (str): The user's natural language query.
+        user_id (int, optional): The user's ID.
+        db_name (str): The name of the database.
+
+    Returns:
+        dict: The AI-generated response.
     """
     try:
-        # Obtener el contexto de la base de datos
+        # Retrieve the database context
         database_context = fetch_database_context(db_name)
         
         # Preparar el prompt con instrucciones específicas para diferentes tipos de consultas
@@ -181,7 +189,7 @@ def generate_response(user_message: str, user_id: int = None, db_name="store.db"
         5. Provide only the information that was asked for
         """
 
-        # Enviar el prompt a la IA
+        # Send the prompt to the AI
         response = client.chat.completions.create(
             model="deepseek-chat",
             messages=[
@@ -192,26 +200,20 @@ def generate_response(user_message: str, user_id: int = None, db_name="store.db"
                 {"role": "user", "content": user_message}
             ],
             max_tokens=500,
-            temperature=0.7
+            temperature=0.7,
         )
 
-        # Extraer y devolver la respuesta
-        return {
-            "status": "success",
-            "response": response.choices[0].message.content.strip()
-        }
+        # Extract and return the response
+        return {"status": "success", "response": response.choices[0].message.content.strip()}
 
     except Exception as e:
-        return {
-            "status": "error",
-            "message": f"Error al generar la respuesta: {e}"
-        }
+        return {"status": "error", "message": f"Error generating the response: {e}"}
 
 
-# Prueba directa
+# Direct test
 if __name__ == "__main__":
-    user_id = int(input("Ingresa tu ID de usuario: "))
-    user_input = input("Escribe tu consulta: ")
-    respuesta = generate_response(user_input, user_id)
-    print("Respuesta del sistema:")
-    print(respuesta)
+    user_id = int(input("Enter your user ID: "))
+    user_input = input("Enter your query: ")
+    response = generate_response(user_input, user_id)
+    print("System response:")
+    print(response)

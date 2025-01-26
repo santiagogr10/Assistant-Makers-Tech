@@ -6,7 +6,8 @@ import pandas as pd
 
 # Custom CSS for styling
 def apply_custom_css():
-    st.markdown("""
+    st.markdown(
+        """
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
 
@@ -27,10 +28,10 @@ def apply_custom_css():
         /* Persistent chat input bar (fixed at the bottom) */
         .chat-container {
             position: fixed;
-            bottom: 0; /* Stick to the bottom of the screen */
+            bottom: 0;
             width: 100%;
             background-color: #1f1f2e;
-            z-index: 1000; /* Keep it above other content */
+            z-index: 1000;
             padding: 10px;
             box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.2);
             display: flex;
@@ -65,9 +66,9 @@ def apply_custom_css():
         /* Chat history container */
         .chat-history {
             padding: 10px;
-            max-height: calc(100vh - 140px); /* Adjust height to avoid overlap */
+            max-height: calc(100vh - 140px);
             overflow-y: auto;
-            margin-bottom: 80px; /* Leave space for the fixed input bar */
+            margin-bottom: 80px;
         }
 
         .user-message {
@@ -84,7 +85,10 @@ def apply_custom_css():
             text-align: left;
         }
         </style>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
+
 
 # ChatBot Section
 def show_chatbot():
@@ -98,29 +102,39 @@ def show_chatbot():
     st.markdown('<div class="chat-container">', unsafe_allow_html=True)
     col1, col2 = st.columns([4, 1])
     with col1:
-        user_input = st.text_input("", placeholder="Enter your question here...", key="chat_input", label_visibility="collapsed")
+        user_input = st.text_input(
+            "",
+            placeholder="Enter your question here...",
+            key="chat_input",
+            label_visibility="collapsed",
+        )
     with col2:
         if st.button("Send", key="send_button"):
             if user_input.strip():
-                # Clear previous messages
-                st.session_state["messages"] = [{"role": "user", "content": user_input}]
+                st.session_state["messages"].append({"role": "user", "content": user_input})
                 try:
                     with st.spinner("Fetching response..."):
                         # Send the query to the backend
                         response = requests.post(
                             "http://127.0.0.1:5000/api/chat",  # Adjust with actual backend URL
-                            json={"message": user_input}
+                            json={"message": user_input},
                         )
                         if response.status_code == 200:
-                            chatbot_response = response.json().get("response", "No response received.")
-                            st.session_state["messages"].append({"role": "assistant", "content": chatbot_response})
+                            chatbot_response = response.json().get(
+                                "response", "No response received."
+                            )
+                            st.session_state["messages"].append(
+                                {"role": "assistant", "content": chatbot_response}
+                            )
                         else:
-                            st.session_state["messages"].append({"role": "assistant", "content": "Error fetching response."})
+                            st.session_state["messages"].append(
+                                {"role": "assistant", "content": "Error fetching response."}
+                            )
                 except Exception as e:
                     st.error(f"Error connecting to backend: {e}")
             else:
                 st.warning("Please enter a question before clicking 'Send'.")
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
     # Display chat history
     for msg in st.session_state["messages"]:
@@ -129,36 +143,54 @@ def show_chatbot():
         else:
             st.markdown(f"**Bot:** {msg['content']}")
 
+
 def show_recommendations(recommendations):
     """
-    Muestra las recomendaciones en formato de columnas comparativas
+    Displays recommendations in a comparative column format.
+
     Args:
-        recommendations (dict): Diccionario con las categorías de productos recomendados
+        recommendations (dict): Dictionary containing categorized recommended products.
     """
     st.subheader("Recommended Products")
-    
+
     # Display recommendations in columns for comparison
     col1, col2, col3 = st.columns(3)
-    
+
     with col1:
-        st.markdown("<h4 style='text-align: center; font-size: 14px;'>Highly Recommended</h4>", unsafe_allow_html=True)
+        st.markdown(
+            "<h4 style='text-align: center; font-size: 14px;'>Highly Recommended</h4>",
+            unsafe_allow_html=True,
+        )
         for product in recommendations["Highly Recommended"]:
-            st.markdown(f"<p style='text-align: center; font-size: 12px;'>- {product}</p>", unsafe_allow_html=True)
-    
+            st.markdown(
+                f"<p style='text-align: center; font-size: 12px;'>- {product}</p>",
+                unsafe_allow_html=True,
+            )
+
     with col2:
-        st.markdown("<h4 style='text-align: center; font-size: 14px;'>Recommended</h4>", unsafe_allow_html=True)
+        st.markdown(
+            "<h4 style='text-align: center; font-size: 14px;'>Recommended</h4>",
+            unsafe_allow_html=True,
+        )
         for product in recommendations["Recommended"]:
-            st.markdown(f"<p style='text-align: center; font-size: 12px;'>- {product}</p>", unsafe_allow_html=True)
-    
+            st.markdown(
+                f"<p style='text-align: center; font-size: 12px;'>- {product}</p>",
+                unsafe_allow_html=True,
+            )
+
     with col3:
-        st.markdown("<h4 style='text-align: center; font-size: 14px;'>Not Recommended</h4>", unsafe_allow_html=True)
+        st.markdown(
+            "<h4 style='text-align: center; font-size: 14px;'>Not Recommended</h4>",
+            unsafe_allow_html=True,
+        )
         for product in recommendations["Not Recommended"]:
-            st.markdown(f"<p style='text-align: center; font-size: 12px;'>- {product}</p>", unsafe_allow_html=True)
+            st.markdown(
+                f"<p style='text-align: center; font-size: 12px;'>- {product}</p>",
+                unsafe_allow_html=True,
+            )
 
 
 # Admin Dashboard Section
-import matplotlib.pyplot as plt
-
 def show_dashboard():
     st.subheader("Admin Dashboard")
 
@@ -166,7 +198,7 @@ def show_dashboard():
     data = {
         "Product": ["Laptop", "Tablet", "Smartphone"],
         "Stock": [20, 15, 30],
-        "Price": [1000, 500, 800]
+        "Price": [1000, 500, 800],
     }
 
     try:
@@ -181,12 +213,12 @@ def show_dashboard():
         st.write("### Stock Levels")
         fig, ax = plt.subplots(figsize=(10, 6))  # Adjust figure size
         df.plot(
-            kind="bar", 
-            x="Product", 
-            y="Stock", 
-            legend=False, 
-            ax=ax, 
-            color="#4c9aff"  # Match color scheme
+            kind="bar",
+            x="Product",
+            y="Stock",
+            legend=False,
+            ax=ax,
+            color="#4c9aff",  # Match color scheme
         )
         ax.set_facecolor("#1f1f2e")  # Match the background of the webpage
         fig.patch.set_facecolor("#1f1f2e")  # Match the figure background
@@ -198,9 +230,8 @@ def show_dashboard():
         ax.title.set_color("white")  # Set title color
         ax.set_ylabel("Stock Quantity")
         ax.set_title("Stock Levels by Product")
-        ax.grid(axis='y', color="#3a3a4a", linestyle="--")  # Subtle gridlines
+        ax.grid(axis="y", color="#3a3a4a", linestyle="--")  # Subtle gridlines
         st.pyplot(fig)
 
     except Exception as e:
         st.error(f"An error occurred while loading the dashboard: {e}")
-
