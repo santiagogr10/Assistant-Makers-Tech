@@ -102,7 +102,8 @@ def show_chatbot():
     with col2:
         if st.button("Send", key="send_button"):
             if user_input.strip():
-                st.session_state["messages"].append({"role": "user", "content": user_input})
+                # Clear previous messages
+                st.session_state["messages"] = [{"role": "user", "content": user_input}]
                 try:
                     with st.spinner("Fetching response..."):
                         # Send the query to the backend
