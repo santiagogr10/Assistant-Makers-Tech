@@ -107,32 +107,88 @@ def fetch_database_context(db_name="store.db") -> str:
 def generate_response(user_message: str, user_id: int = None, db_name="store.db") -> dict:
     """
     Genera una respuesta basada en el mensaje del usuario y el contexto de la base de datos.
-
-    Args:
-        user_message (str): Consulta del usuario en lenguaje natural.
-        user_id (int, opcional): ID del usuario.
-        db_name (str): Nombre de la base de datos.
-
-    Returns:
-        dict: Respuesta generada por la IA.
     """
     try:
         # Obtener el contexto de la base de datos
         database_context = fetch_database_context(db_name)
+        
+        # Preparar el prompt con instrucciones específicas para diferentes tipos de consultas
+        prompt = """
+        You are a Makers Tech assistant. Follow these specific response formats based on the type of query:
 
-        # Preparar el prompt
-        prompt = (
-            "Eres un asistente inteligente para Makers Tech. Responde a las consultas del usuario basándote en la siguiente información de la base de datos:\n"
-            f"{database_context}\n\n"
-            "Consulta del usuario:\n"
-            f"{user_message}\n"
-        )
+        1. For stock queries (when users ask about quantity or availability):
+        Response format: "The [Product Name] has [X] units in stock."
+        Example: "The MacBook Pro has 15 units in stock."
+
+        2. For price queries:
+        Response format: "The [Product Name] costs $[Price]."
+        Example: "The iPhone 13 costs $999."
+
+        3. For product recommendations, strictly follow these classification criteria and format:
+
+        When providing recommendations, ALWAYS use this EXACT markdown format with separators:
+        say that given the purchase history, give the user recommendations for products that are highly recommended, recommended and not recommended.
+        and explain why each product is recommended or not recommended.
+        explain that the recomenendations are based on the purchase history.
+        ----
+
+        ## Highly Recommended:
+        - [Product 1]: [Brief reason with specific details about brand/category match]
+        - [Product 2]: [Brief reason with specific details about brand/category match]
+
+        ## Recommended:
+        - [Product 1]: [Brief reason explaining the related category or complementary use]
+        - [Product 2]: [Brief reason explaining the related category or complementary use]
+
+        ## Not Recommended:
+        - [Product 1]: [Brief reason explaining why it doesn't match user preferences]
+        - [Product 2]: [Brief reason explaining why it doesn't match user preferences]
+        ----
+
+        Classification criteria:
+        - Highly Recommended:
+          * Products from brands the user has already purchased
+          * Products in categories from user's history
+          * Complementary products to existing purchases
+          * Must be in stock
+
+        - Recommended:
+          * Products from related categories
+          * Generic complementary products
+          * Can be from different brands
+          * Must be in stock
+
+        - Not Recommended:
+          * Products unrelated to user's brands/categories
+          * Non-complementary items
+          * Products without clear utility for user's needs
+
+        4. For general product information:
+        Response format: "[Product Name]: [Category] by [Brand], priced at $[Price] with [X] units in stock."
+        Example: "MacBook Pro: Laptop by Apple, priced at $1299 with 15 units in stock."
+
+        Available product information:
+        {database_context}
+
+        User message:
+        {user_message}
+
+        Remember to:
+        1. Be concise and direct
+        2. Use the exact format specified for each type of query
+        3. Use markdown formatting ONLY for recommendations section
+        4. Always include the ---- separators and ## headers in recommendations
+        5. Provide only the information that was asked for
+        """
 
         # Enviar el prompt a la IA
         response = client.chat.completions.create(
             model="deepseek-chat",
             messages=[
-                {"role": "system", "content": prompt},
+                {"role": "system", "content": prompt.format(
+                    database_context=database_context,
+                    user_message=user_message
+                )},
                 {"role": "user", "content": user_message}
             ],
             max_tokens=500,
