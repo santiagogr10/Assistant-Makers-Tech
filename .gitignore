@@ -1,2 +1,56 @@
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# Virtual environments
 venv/
+env/
+
+# Python files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Tool and editor configurations
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Dependency files
+Pipfile.lock
+poetry.lock
+
+# Databases and logs
+*.sqlite3
+*.db
+*.log
+*.tmp
+
+# Sensitive files
 .env
+config.json
+secrets.json
+
+# Distribution
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Flask specific
+instance/
+*.key
+
+# Streamlit specific
+.streamlit/
+.streamlit_secrets.toml
+
+# Streamlit cache folder
+__pycache__/
+cache/
+
+# Temporary files
+*.bak
+*.swp
+*.tmp
