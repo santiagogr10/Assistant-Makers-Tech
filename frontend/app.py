@@ -251,7 +251,7 @@ def generate_ai_response(user_message: str, user_data: dict):
         return f"An unexpected error occurred: {str(e)}"
 
 
-# Sidebar para navegación
+# Sidebar for navigation
 with st.sidebar:
     if st.session_state.logged_in:
         if st.button("Dashboard", key="dashboard_btn"):
@@ -359,7 +359,7 @@ elif st.session_state.current_page == "main":
 elif st.session_state.current_page == "dashboard":
     st.title("Admin Dashboard")
 
-    # Métricas principales en la parte superior
+    # Main metrics at the top
     col1, col2, col3, col4 = st.columns(4)
     data = get_database_content_as_dict()
     total_products = calculate_total_products(data)
@@ -375,12 +375,12 @@ elif st.session_state.current_page == "dashboard":
     with col4:
         st.metric("Total Categories", total_categories, "")
 
-    # Primera fila de gráficos
+    # First row of graphs
     col1, col2 = st.columns(2)
 
     with col1:
         st.subheader("Stock Levels by Category")
-        # Datos de ejemplo para el gráfico de barras
+        # Sample data for bar chart
         stock_data = {
             "Category": ["Laptops", "Smartphones", "Tablets", "Accessories"],
             "Stock": [45, 30, 25, 60],
@@ -400,7 +400,7 @@ elif st.session_state.current_page == "dashboard":
 
     with col2:
         st.subheader("Sales Distribution by Brand")
-        # Datos de ejemplo para el gráfico circular
+        # Sample data for pie chart
         sales_data = {
             "Brand": ["Apple", "Dell", "HP", "Lenovo", "Others"],
             "Sales": [35, 25, 20, 15, 5],
@@ -416,12 +416,12 @@ elif st.session_state.current_page == "dashboard":
         fig2.patch.set_facecolor("#1f1f2e")
         st.pyplot(fig2)
 
-    # Segunda fila
+    # Second row
     st.subheader("Inventory Details")
     inventory_data = get_database_content_as_dict()
     df_inventory = pd.DataFrame(inventory_data)
 
-    # Estilo para la tabla
+    # Style for the table
     st.dataframe(
         df_inventory,
         column_config={
@@ -437,7 +437,7 @@ elif st.session_state.current_page == "dashboard":
         use_container_width=True,
     )
 
-    # Alertas de stock bajo
+    # Low stock alerts
     st.subheader("Low Stock Alerts")
     low_stock_items = df_inventory[df_inventory["Stock"] < 10]
     if not low_stock_items.empty:
@@ -449,7 +449,7 @@ elif st.session_state.current_page == "dashboard":
 # Footer
 st.divider()
 st.markdown("**Makers Tech ChatBot** © 2025 - All rights reserved")
-# Actualizar el CSS
+# Update CSS
 st.markdown(
     """
     <style>
