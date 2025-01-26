@@ -1,6 +1,59 @@
 import sqlite3
 
 
+def calculate_total_products(data):
+    """
+    Calculates the total number of products in the database.
+
+    Args:
+        data (dict): The database output containing product information.
+
+    Returns:
+        int: Total number of products.
+    """
+    return sum(data["Stock"])
+
+
+def calculate_low_stock_items(data, threshold=5):
+    """
+    Counts the number of items with stock below a certain threshold.
+
+    Args:
+        data (dict): The database output containing product information.
+        threshold (int): The stock threshold to classify as low stock.
+
+    Returns:
+        int: Count of low stock items.
+    """
+    return sum(1 for stock in data["Stock"] if stock < threshold)
+
+
+def calculate_out_of_stock_items(data):
+    """
+    Counts the number of items that are out of stock.
+
+    Args:
+        data (dict): The database output containing product information.
+
+    Returns:
+        int: Count of out-of-stock items.
+    """
+    return sum(1 for stock in data["Stock"] if stock == 0)
+
+
+def calculate_total_categories(data):
+    """
+    Calculates the total number of unique categories in the database.
+
+    Args:
+        data (dict): The database output containing product information.
+
+    Returns:
+        int: Total number of unique categories.
+    """
+    return len(set(data["Category"]))
+
+
 def get_database_content_as_dict(db_name="store.db") -> dict:
     """
     Retrieves the entire database content as a dictionary.
